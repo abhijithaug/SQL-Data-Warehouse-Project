@@ -11,10 +11,6 @@ This project demonstrates how to:
 - Implement **star and snowflake schema** for optimized querying.
 - Use **T-SQL queries** to perform complex data analysis.
 
-### 🔗 Video Walkthrough
-📺 **Watch the full tutorial here**:  
-[![SQL Data Warehouse Project](https://img.youtube.com/vi/9GVqKuTVANE/0.jpg)](https://www.youtube.com/watch?v=9GVqKuTVANE)
-
 ---
 
 ## 📂 Project Structure
