@@ -1,3 +1,9 @@
+/*
+===============================
+Data cleaning steps performed in the bronze layer for teh table cust_info and also in the same tbale at silver layer
+========================================================
+/*
+
 SELECT * FROM [bronze].[crm_cust_info];
 use [bronze].[crm_cust_info]
 
