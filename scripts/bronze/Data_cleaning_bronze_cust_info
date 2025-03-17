@@ -1,6 +1,6 @@
 /*
 ===============================
-Data cleaning steps performed in the bronze layer for teh table cust_info and also in the same tbale at silver layer
+Data cleaning steps performed in the bronze layer for the table cust_info, and also in the same table atthe  silver layer
 ========================================================
 /*
 
@@ -9,7 +9,7 @@ use [bronze].[crm_cust_info]
 
 
 
---check for nulls and duplicates in teh primary key
+--check for nulls and duplicates in the primary key
 SELECT
 cst_id,
 COUNT(*)
@@ -18,9 +18,9 @@ GROUP BY cst_id
 HAVING COUNT(*)>1 OR cst_id IS NULL
 
 
---to remove nulls and duplicates
+-- to remove nulls and duplicates
 SELECT * FROM [bronze].[crm_cust_info]
-WHERE cst_id = 29466 -- check for a particulat primary key to see how many times it is repeated
+WHERE cst_id = 29466 -- check for a particular primary key to see how many times it is repeated
 
 SELECT
 *
@@ -32,7 +32,7 @@ FROM (
 	WHERE cst_id IS NOT NULL
 	)t WHERE flag_last = 1
 	-- take only the most recent entry per duplicate primary key values
-	-- assuming the lates entry is the most updated and having less chance of error
+	-- assuming the latest entry is the most updated and having less chance of error
 
 
 	-- Additional explanation for data cleaning  
@@ -52,7 +52,7 @@ FROM [bronze].[crm_cust_info]
 -- Remove unwanted spaces in the strings
 -- using TRIM function
 -- Uses TRIM() on cst_firstname and cst_lastname to remove any leading or trailing spaces.
-INSERT INTO [Silver].[crm_cust_info] --insert clean data into silver table. this is the final step after data cleaning
+INSERT INTO [Silver].[crm_cust_info] --insert clean data into silver table. This is the final step after data cleaning
 		(
 		cst_id ,
 		cst_key ,
@@ -72,8 +72,8 @@ SELECT
 	TRIM (cst_lastname) AS cst_lastname,
 
 --cst_material_status AS cst_marital_status, -- change the spelling of marital status correctly
---Data normalization or Data standarilzation process is done in the following steps
---values to meaningful userfriendly description
+-- Data normalization or Data standarilzation process is done in the following steps
+-- values to meaningful, userfriendly description
 -- to modify M and F to Male and Female respectively
 -- Uses TRIM() on cst_gender
 	CASE 
@@ -91,8 +91,8 @@ SELECT
         ELSE 'n/a'
     END AS cst_gndr,
 	cst_create_date
-FROM -- considring the previously edited table as reference
---Removing duplicates & ensure only one record for each primary key by identifying and retaining only
+FROM -- considering the previously edited table as reference
+-- Removing duplicates & ensuring only one record for each primary key by identifying and retaining only
 	(
 	SELECT 
 	*, 
