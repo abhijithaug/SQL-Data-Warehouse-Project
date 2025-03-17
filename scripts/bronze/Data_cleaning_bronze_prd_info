@@ -1,4 +1,8 @@
-/****** Script for SelectTopNRows command from SSMS  ******/
+/*
+===============================
+Data cleaning steps performed in the bronze layer for the table prd_info and also in the same table at silver layer
+========================================================
+/*
 SELECT [prd_id],
 
       [prd_key],
