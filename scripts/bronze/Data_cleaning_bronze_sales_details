@@ -1,0 +1,100 @@
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT 
+	  [sls_ord_num],
+      [s_prd_key],
+      [sls_cust_id],
+
+-- convert sls_order_dt into a date format yyyy-mm-dd format   
+CASE WHEN sls_order_dt =0 OR LEN(sls_order_dt) != 8 THEN NULL
+	ELSE CAST(CAST(sls_order_dt AS VARCHAR) AS DATE)
+END AS sls_order_dt,
+
+-- convert sls_ship_dt into a date format yyyy-mm-dd format
+CASE WHEN sls_ship_dt =0 OR LEN(sls_ship_dt) != 8 THEN NULL
+	ELSE CAST(CAST(sls_ship_dt AS VARCHAR) AS DATE)
+END AS sls_ship_dt,
+
+-- convert sls_due_dt into a date format yyyy-mm-dd format
+CASE WHEN sls_due_dt =0 OR LEN(sls_due_dt) != 8 THEN NULL
+	ELSE CAST(CAST(sls_due_dt AS VARCHAR) AS DATE)
+END AS sls_due_dt,
+
+-- This will display errors like null sales, negative sales, incorrect qty etc.
+-- Rule 1: If sale is negative, null or zero derive it using qty & price.
+-- Rule 2: If price is zero or null, calculate it using sales & qty.
+-- Rule 3: If price is negative, convert it int a positive one.
+     CASE WHEN sls_sales IS NULL OR sls_sales <= 0 OR sls_sales != sls_quantity * ABS(sls_price)
+			THEN sls_quantity * ABS(sls_price)
+		ELSE sls_sales
+	END AS sls_sales,
+
+	sls_quantity,
+     
+	 CASE WHEN sls_price IS NULL OR sls_price <= 0
+			THEN sls_sales / NULLIF(sls_quantity, 0)
+		ELSE sls_price
+	END AS sls_price
+	
+  FROM [DataWarehouse27022025].[bronze].[crm_sales_details]
+ 
+
+
+
+
+ -- Additional SQL commands for the ease of transformation. 
+
+ --WHERE s_prd_key NOT IN (SELECT prd_key FROM [Silver].[crm_prd_info])
+-- To check all the product keys from the sales details can be used and connected with the product info 
+--WHERE sls_cust_id NOT IN (SELECT cst_id FROM [Silver].[crm_cust_info])
+--we don't have here any issues in connecting cst_id
+
+
+-- check for invalid dates
+SELECT
+sls_order_dt
+FROM [bronze].[crm_sales_details]
+WHERE sls_order_dt <= 0 -- lots of 0's. So replace zeros with null
+
+-- Modified sql
+SELECT
+NULLIF(sls_order_dt, 0) sls_ordr_dt
+FROM [bronze].[crm_sales_details]
+WHERE sls_order_dt <= 0
+
+
+
+ -- to check order date is always smaller than ship date and due date
+
+SELECT *
+	FROM [bronze].[crm_sales_details]
+	WHERE sls_order_dt >sls_ship_dt  OR sls_order_dt > sls_due_dt
+
+-- To check data consistency between Sales, Qty and Price
+-- Business Rule 1: Sum(sales) = Qty x Price
+-- Business Rule 2 : Negatives, Zeros, Nulls not allowed
+SELECT DISTINCT
+		sls_sales AS old_sls_sales,
+		sls_quantity,
+		sls_price AS old_sls_price,
+
+	CASE WHEN sls_sales IS NULL OR sls_sales <= 0 OR sls_sales != sls_quantity * ABS(sls_price)
+			THEN sls_quantity * ABS(sls_price)
+		ELSE sls_sales
+	END AS sls_sales,
+
+	CASE WHEN sls_price IS NULL OR sls_price <= 0
+			THEN sls_sales / NULLIF(sls_quantity, 0)
+		ELSE sls_price
+	END AS sls_price
+
+	FROM [bronze].[crm_sales_details]
+	WHERE sls_sales != sls_quantity * sls_price
+	OR sls_sales IS NULL OR sls_quantity IS NULL OR sls_price IS NULL
+	OR sls_sales <= 0 OR sls_quantity <= 0 OR sls_price <= 0
+	ORDER BY sls_sales, sls_quantity, sls_price
+
+-- This will display errors like null sales, negative sales, incorrect qty etc.
+-- Rule 1: If sale is negative, null or zero derive it using qty & price.
+-- Rule 2: If price is zero or null, calculate it using sales & qty.
+-- Rule 3: If price is negative, convert it int a positive one.
+
