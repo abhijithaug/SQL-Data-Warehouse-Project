@@ -1,8 +1,24 @@
 /****** Script for SelectTopNRows command from SSMS  ******/
+
+	
+-- Doing a few modifications to the  [Silver].[crm_sales_details] table to accurately map bronze and silver layers
+  -- insert the bronzer layer prd table into the silver layer sales_details table
+INSERT INTO silver.crm_sales_details (
+			sls_ord_num,
+			s_prd_key,
+			sls_cust_id,
+			sls_order_dt,
+			sls_ship_dt,
+			sls_due_dt,
+			sls_sales,
+			sls_quantity,
+			sls_price
+		)
+
 SELECT 
-	  [sls_ord_num],
-      [s_prd_key],
-      [sls_cust_id],
+	  sls_ord_num,
+      s_prd_key,
+      sls_cust_id,
 
 -- convert sls_order_dt into a date format yyyy-mm-dd format   
 CASE WHEN sls_order_dt =0 OR LEN(sls_order_dt) != 8 THEN NULL
@@ -20,9 +36,9 @@ CASE WHEN sls_due_dt =0 OR LEN(sls_due_dt) != 8 THEN NULL
 END AS sls_due_dt,
 
 -- This will display errors like null sales, negative sales, incorrect qty etc.
--- Rule 1: If the sale is negative, null or zero derive it using qty & price.
--- Rule 2: If the price is zero or null, calculate it using sales & qty.
--- Rule 3: If the price is negative, convert it into a positive one.
+-- Rule 1: If sale is negative, null or zero derive it using qty & price.
+-- Rule 2: If price is zero or null, calculate it using sales & qty.
+-- Rule 3: If price is negative, convert it int a positive one.
      CASE WHEN sls_sales IS NULL OR sls_sales <= 0 OR sls_sales != sls_quantity * ABS(sls_price)
 			THEN sls_quantity * ABS(sls_price)
 		ELSE sls_sales
@@ -97,4 +113,5 @@ SELECT DISTINCT
 -- Rule 1: If sale is negative, null or zero derive it using qty & price.
 -- Rule 2: If price is zero or null, calculate it using sales & qty.
 -- Rule 3: If price is negative, convert it int a positive one.
+
 
