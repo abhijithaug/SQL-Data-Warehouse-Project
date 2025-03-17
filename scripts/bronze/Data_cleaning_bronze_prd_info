@@ -1,0 +1,155 @@
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT [prd_id],
+
+      [prd_key],
+	  -- to split prd_key to another colum by taking first 5 characters
+	  -- also to replace "-" with "_" to get a correct maping
+
+	  REPLACE(SUBSTRING (prd_key, 1, 5), '-', '_') AS cat_id, 
+	  -- this is doing because in the table [bronze].[erp_px_cat_g1v2] we having same 'id' to map 
+	  -- Extract category ID
+
+	  SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key, 
+	  -- extract the remaining into another column. 
+	  -- LEN() returns the number of charatcters in the string
+	  -- this is doing because in the table [bronze].[crm_sales_details] we having same 's_prd_key' to map
+	  -- Extract product key
+	  -- Derived Columns: new column based on calculations or transformations of an existing one
+
+      [prd_nm],--this column is fine no transformation required
+
+     ISNULL([prd_cost], 0) AS prd_cost, --check for negative or Nulls and replace nulls with 0
+    
+
+	  CASE  WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain' -- data moodification on  [prd_line] table
+			WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
+			WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
+			WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
+			ELSE 'n/a'
+		END AS prd_line,
+		--Map prd_line codes to descriptive/meaning ful values- data normalization done here. 
+
+      --[prd_start_dt], it is been observed that few start dates are < end dates. its is an error.
+	  CAST(prd_start_dt AS DATE) AS prd_start_dt, -- extract only date
+
+	  -- calculate the end date for each prd_key by taking the next start date subtracting 1 day
+	  -- casting the result as a DATE only
+	  --The LEAD() is a window function that retrieves the value of a column from the next row within the same partition.
+
+	  CAST(LEAD( prd_start_dt) OVER( PARTITION BY prd_key ORDER BY prd_start_dt) - 1 AS DATE) AS prd_end_dt
+      -- Data enrichment adding a value to the data 
+
+  FROM [bronze].[crm_prd_info]
+  --WHERE SUBSTRING(prd_key, 7, LEN(prd_key)) IN (
+  -- SELECT s_prd_key FROM [bronze].[crm_sales_details])
+
+
+  -- Now we need to modify the columns in the [Silver].[crm_prd_info] as we modified some columns in the [bronze].[crm_prd_info]
+  -- Also need to change the DATE type in start and end dates on [Silver].[crm_prd_info]
+
+
+-- Doing do few modifications to the  [Silver].[crm_prd_info] table to accurately map bronze and silver layers
+  -- insert the bronzer layer prd table into silver layer prd table
+INSERT INTO silver.crm_prd_info
+	(
+	prd_id,
+	cat_id,
+	prd_key,
+	prd_nm,
+	prd_cost,
+	prd_line,
+	prd_start_dt,
+	prd_end_dt
+	)
+SELECT 
+	 [prd_id],
+     REPLACE(SUBSTRING (prd_key, 1, 5), '-', '_') AS cat_id, 
+	 SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key, 
+     [prd_nm],
+	 ISNULL([prd_cost], 0) AS prd_cost, 
+     CASE  WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain' 
+			WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
+			WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
+			WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
+			ELSE 'n/a'
+	END AS prd_line,
+	CAST(prd_start_dt AS DATE) AS prd_start_dt, 
+	CAST(LEAD( prd_start_dt) OVER( PARTITION BY prd_key ORDER BY prd_start_dt) - 1 AS DATE) AS prd_end_dt
+ FROM [bronze].[crm_prd_info]
+ 
+
+
+
+
+--// insert the result of the bronze layer data cleaning querry into the silver layer
+--using INSERT INTO cooand
+
+INSERT INTO [Silver].[crm_prd_info]
+(
+	prd_id INT,
+	cat_id NVARCHAR(50),
+	prd_key NVARCHAR(50),
+	prd_nm NVARCHAR(50),
+	prd_cost INT,
+	prd_line NVARCHAR(50),
+	prd_start_dt DATE,
+	prd_end_dt DATE,
+	dwh_create_date DATETIME2 DEFAULT GETDATE()
+	);
+
+
+
+
+
+	SELECT * FROM [Silver].[crm_prd_info]
+
+
+
+
+  --*****
+ -- Additional Commands
+ --******
+
+  SELECT
+prd_id,
+COUNT(*)
+FROM [bronze].[crm_prd_info]
+GROUP BY prd_id
+HAVING COUNT(*)>1 OR prd_id IS NULL
+
+
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT TOP (1000) [sls_ord_num]
+      ,[s_prd_key]
+      ,[sls_cust_id]
+      ,[sls_order_dt]
+      ,[sls_ship_dt]
+      ,[sls_due_dt]
+      ,[sls_sales]
+      ,[sls_quantity]
+      ,[sls_price]
+  FROM [DataWarehouse27022025].[bronze].[crm_sales_details]
+
+
+
+  SELECT prd_cost
+  FROM [bronze].[crm_prd_info]
+  WHERE prd_cost <0 OR prd_cost IS NULL
+
+
+ SELECT DISTINCT prd_line
+ FROM [bronze].[crm_prd_info]
+
+ --check for invalid date orders
+ SELECT *
+ FROM [bronze].[crm_prd_info]
+ WHERE prd_end_dt < prd_start_dt
+
+
+
+   SELECT
+prd_id,
+COUNT(*)
+FROM [silver].[crm_prd_info]
+GROUP BY prd_id
+HAVING COUNT(*)>1 OR prd_id IS NULL
