@@ -1,22 +1,22 @@
 /*
 ===============================
-Data cleaning steps performed in the bronze layer for the table prd_info and also in the same table at silver layer
+Data cleaning steps performed in the bronze layer for the table prd_info, and also in the same table atthe  silver layer
 ========================================================
 /*
 SELECT [prd_id],
 
       [prd_key],
-	  -- to split prd_key to another colum by taking first 5 characters
-	  -- also to replace "-" with "_" to get a correct maping
+	  -- to split prd_key to another column by taking first 5 characters
+	  -- also to replace "-" with "_" to get a correct mapping
 
 	  REPLACE(SUBSTRING (prd_key, 1, 5), '-', '_') AS cat_id, 
-	  -- this is doing because in the table [bronze].[erp_px_cat_g1v2] we having same 'id' to map 
+	  -- This is done because in the table [bronze].[erp_px_cat_g1v2] we have same 'id' to map 
 	  -- Extract category ID
 
 	  SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key, 
 	  -- extract the remaining into another column. 
-	  -- LEN() returns the number of charatcters in the string
-	  -- this is doing because in the table [bronze].[crm_sales_details] we having same 's_prd_key' to map
+	  -- LEN() returns the number of characters in the string
+	  -- this is done because in the table [bronze].[crm_sales_details] we having same 's_prd_key' to map
 	  -- Extract product key
 	  -- Derived Columns: new column based on calculations or transformations of an existing one
 
@@ -31,12 +31,12 @@ SELECT [prd_id],
 			WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
 			ELSE 'n/a'
 		END AS prd_line,
-		--Map prd_line codes to descriptive/meaning ful values- data normalization done here. 
+		--Map prd_line codes to descriptive/meaningful values- data normalization done here. 
 
-      --[prd_start_dt], it is been observed that few start dates are < end dates. its is an error.
+      --[prd_start_dt], it is been observed that a few start dates are < end dates. it's an error.
 	  CAST(prd_start_dt AS DATE) AS prd_start_dt, -- extract only date
 
-	  -- calculate the end date for each prd_key by taking the next start date subtracting 1 day
+	  -- calculate the end date for each prd_key by taking the next start date, subtracting 1 day
 	  -- casting the result as a DATE only
 	  --The LEAD() is a window function that retrieves the value of a column from the next row within the same partition.
 
@@ -52,8 +52,8 @@ SELECT [prd_id],
   -- Also need to change the DATE type in start and end dates on [Silver].[crm_prd_info]
 
 
--- Doing do few modifications to the  [Silver].[crm_prd_info] table to accurately map bronze and silver layers
-  -- insert the bronzer layer prd table into silver layer prd table
+-- Doing a few modifications to the  [Silver].[crm_prd_info] table to accurately map bronze and silver layers
+  -- insert the bronzer layer prd table into the silver layer prd table
 INSERT INTO silver.crm_prd_info
 	(
 	prd_id,
