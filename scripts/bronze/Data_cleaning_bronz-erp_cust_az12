@@ -1,3 +1,10 @@
+/*
+===============================
+Data cleaning steps performed in the bronze layer for the table erp_cust_az12, and also in the same table at the  silver layer
+========================================================
+/*
+
+
 -- Build Silver layer 
 -- Clean and Load [bronze].[erp_cust_az12]
 
