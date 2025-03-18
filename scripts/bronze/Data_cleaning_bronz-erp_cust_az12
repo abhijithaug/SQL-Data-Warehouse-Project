@@ -1,0 +1,71 @@
+-- Build Silver layer 
+-- Clean and Load [bronze].[erp_cust_az12]
+
+SELECT	
+		CASE WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LEN(cid))
+		ELSE cid
+		END AS cid,
+		cid,
+-- Remove "NAS" character from cid column so as to match with [Silver].[crm_cust_info] table
+
+		CASE WHEN bdate > GETDATE() THEN NULL -- if bdate in future; substitute with null values
+		ELSE bdate
+		END AS bdate, 
+
+CASE WHEN UPPER(TRIM(gen)) IN ('F', 'Female') THEN 'Female'
+		 WHEN UPPER(TRIM(gen)) IN ('M', 'Male') THEN 'Male'
+	ELSE 'N/a'
+	END AS gen -- Normalize gender values
+		
+  FROM [DataWarehouse27022025].[bronze].[erp_cust_az12];
+
+SELECT * FROM [Silver].[crm_cust_info];
+
+
+
+	-- Additional SQL commands for the ease of transformation. 
+	-- Identify out of range dates
+  SELECT DISTINCT 
+  bdate
+  FROM [bronze].[erp_cust_az12]
+  WHERE bdate < '1924-01-01' OR bdate > GETDATE()
+
+
+-- Data standarization and consistency in gender column
+ SELECT DISTINCT gen
+ FROM [bronze].[erp_cust_az12]
+
+ -- Aplying transformation logic
+  SELECT DISTINCT 
+	gen,
+	CASE WHEN UPPER(TRIM(gen)) IN ('F', 'Female') THEN 'Female'
+		 WHEN UPPER(TRIM(gen)) IN ('M', 'Male') THEN 'Male'
+	ELSE 'N/a'
+	END AS gen
+	FROM [bronze].[erp_cust_az12]
+
+
+
+		-- Final Step: 
+		-- insert the bronzer layer erp_cust_az12 table into the silver layer erp_cust_az12 table
+INSERT INTO silver.erp_cust_az12 (
+			cid,
+			bdate,
+			gen
+			)
+SELECT	
+		CASE WHEN cid LIKE 'NAS%' THEN SUBSTRING(cid, 4, LEN(cid))
+		ELSE cid
+		END AS cid,
+
+		CASE WHEN bdate > GETDATE() THEN NULL -- if bdate in future; substitute with null values
+		ELSE bdate
+		END AS bdate, 
+
+		CASE WHEN UPPER(TRIM(gen)) IN ('F', 'Female') THEN 'Female'
+		 WHEN UPPER(TRIM(gen)) IN ('M', 'Male') THEN 'Male'
+		ELSE 'N/a'
+		END AS gen
+		
+  FROM [DataWarehouse27022025].[bronze].[erp_cust_az12]
+
